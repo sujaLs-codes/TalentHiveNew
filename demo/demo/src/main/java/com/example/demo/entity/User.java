@@ -2,14 +2,15 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
-// ... existing imports ...
-
+@Data
 @Entity
 @Table(name = "users")
 public class User {
-    // Fields ko private declare kar (yeh missing tha)
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,22 +32,12 @@ public class User {
 
     private String profilePictureUrl;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    // Manual setters (jo tune add kiye the)
-    public void setUsername(String username) { this.username = username; }
-    public void setEmail(String email) { this.email = email; }
-    public void setPassword(String password) { this.password = password; }
-    public void setRole(Role role) { this.role = role; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
-    // Getters (optional abhi, lekin add kar le safe rahega)
-    public String getEmail() { return email; }
-    public String getUsername() { return username; }
-    public String getPassword() { return password; }
-    public Role getRole() { return role; }
-    public String getFullName() { return fullName; }
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     public enum Role {
         JOB_SEEKER, RECRUITER, ADMIN
