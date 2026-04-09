@@ -18,7 +18,7 @@ public class JobController {
     @Autowired
     private JobService jobService;
 
-    // Sab jobs dekhne ke liye (Public - koi login nahi chahiye)
+    // Sab jobs dekhne ke liye (Public)
     @GetMapping
     public ResponseEntity<List<Job>> getAllJobs() {
         List<Job> jobs = jobService.getAllJobs();

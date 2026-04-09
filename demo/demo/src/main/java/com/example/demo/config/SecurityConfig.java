@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -14,16 +13,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // development ke liye disable
+                .csrf(csrf -> csrf.disable()) // Development ke liye
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()  // signup/login ko public kar de
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**").permitAll() // Signup aur Login ko allow
+                        .requestMatchers("/api/jobs").permitAll() // Job listing ko public kar diya
+                        .requestMatchers("/api/jobs/**").permitAll() // Job details bhi public
+                        .anyRequest().authenticated() // Baaki sab protected
                 );
-        return http.build();
-    }
 
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return http.build();
     }
 }
