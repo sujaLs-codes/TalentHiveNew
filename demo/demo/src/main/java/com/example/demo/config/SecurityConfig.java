@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -11,14 +12,20 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Development ke liye
+                .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Signup aur Login ko allow
-                        .requestMatchers("/api/jobs").permitAll() // Job listing ko public kar diya
-                        .requestMatchers("/api/jobs/**").permitAll() // Job details bhi public
-                        .anyRequest().authenticated() // Baaki sab protected
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/jobs", "/api/jobs/**").permitAll()
+                        .requestMatchers("/api/applications/**").permitAll()   // ← Apply for Job ke liye
+                        .anyRequest().authenticated()
                 );
 
         return http.build();
