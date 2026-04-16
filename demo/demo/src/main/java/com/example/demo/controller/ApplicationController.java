@@ -60,6 +60,37 @@ public class ApplicationController {
         return ResponseEntity.ok(applications);
     }
 
+    //Recruiter :- Can update application status
+    @PutMapping("/{applicationId}/status")
+    public ResponseEntity<String> updateApplicationStatus(
+            @PathVariable Long applicationId,
+            @RequestBody String newStatus,
+            HttpSession session) {
+
+        User loggedInUser = (User) session.getAttribute("user");
+
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401).body("Please login first");
+        }
+
+        if (!"RECRUITER".equals(loggedInUser.getRole().name())) {
+            return ResponseEntity.status(403).body("Only Recruiters can update application status");
+        }
+
+        try {
+            // Extra spaces aur case sensitivity handle kar rahe hain
+            String statusStr = newStatus.trim().toUpperCase();
+            Application.ApplicationStatus status = Application.ApplicationStatus.valueOf(statusStr);
+
+            Application updatedApplication = applicationService.updateApplicationStatus(applicationId, status, loggedInUser);
+            return ResponseEntity.ok("Application status updated to: " + status);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid status. Allowed: PENDING, REVIEWING, SHORTLISTED, REJECTED, ACCEPTED");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     //Recruiter - He can see all the applications of his job
     @GetMapping("/job/{jobId}")
     public ResponseEntity<List<Application>> getApplicationsForJob(@PathVariable Long jobId, HttpSession session) {

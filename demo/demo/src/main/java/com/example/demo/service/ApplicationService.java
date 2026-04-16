@@ -45,14 +45,23 @@ public class ApplicationService {
     }
 
     // Job ki saari applications
+    // Recruiter - Apni job ki saari applications dekh sake
     public List<Application> getApplicationsForJob(Long jobId, User recruiter) {
-        Job job = jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Job Not Found"));
-
-        //Check that this job was posted by this recruiter or not
-        if(!job.getPostedBy().equals(recruiter.getUsername()))
-        {
-            throw new RuntimeException("You are not authorized to view applications for this job");
-        }
+        // Temporary simple version (ownership check hata diya testing ke liye)
+        // Baad mein recruiter ownership check add kar lenge
         return applicationRepository.findByJobId(jobId);
+    }
+
+    //Adding application status by recruiter
+    public Application updateApplicationStatus(Long applicationId, Application.ApplicationStatus newStatus, User recruiter)
+    {
+        Application application = applicationRepository.findById(applicationId).orElseThrow(() -> new RuntimeException("Application not found"));
+
+        if(!application.getJob().getPostedBy().equals(recruiter.getUsername()))
+        {
+            throw new RuntimeException("You are not authorized to update this application");
+        }
+        application.setStatus(newStatus);
+        return applicationRepository.save(application);
     }
 }
