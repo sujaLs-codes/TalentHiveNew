@@ -17,19 +17,20 @@ public class ApplicationController {
     @Autowired
     private ApplicationService applicationService;
 
-    // Endpoint of apply on job
+    // Apply for Job
     @PostMapping("/apply/{jobId}")
-    public ResponseEntity<String> applyForJob(@PathVariable Long jobId, @RequestBody String coverLetter, HttpSession session)
-    {
+    public ResponseEntity<String> applyForJob(
+            @PathVariable Long jobId,
+            @RequestBody String coverLetter,
+            HttpSession session) {
+
         User loggedInUser = (User) session.getAttribute("user");
 
-        if(loggedInUser == null)
-        {
+        if (loggedInUser == null) {
             return ResponseEntity.status(401).body("Please login first");
         }
 
-        if(!"JOB_SEEKER".equals(loggedInUser.getRole().name()))
-        {
+        if (!"JOB_SEEKER".equals(loggedInUser.getRole().name())) {
             return ResponseEntity.status(403).body("Only Job Seekers can apply for jobs");
         }
 
@@ -41,17 +42,15 @@ public class ApplicationController {
         }
     }
 
-    //Looking for my all applications
+    // My Applications (Job Seeker)
     @GetMapping("/my")
-    public ResponseEntity<List<Application>> getMyApplications(HttpSession session)
-    {
+    public ResponseEntity<List<Application>> getMyApplications(HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
 
-        if(loggedInUser == null){
+        if (loggedInUser == null) {
             return ResponseEntity.status(401).build();
         }
 
-        //Only jobseeker can see it
         if (!"JOB_SEEKER".equals(loggedInUser.getRole().name())) {
             return ResponseEntity.status(403).build();
         }
@@ -60,7 +59,31 @@ public class ApplicationController {
         return ResponseEntity.ok(applications);
     }
 
-    //Recruiter :- Can update application status
+    // Recruiter - Job ki saari applications dekh sake
+    @GetMapping("/job/{jobId}")
+    public ResponseEntity<List<Application>> getApplicationsForJob(
+            @PathVariable Long jobId,
+            HttpSession session) {
+
+        User loggedInUser = (User) session.getAttribute("user");
+
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (!"RECRUITER".equals(loggedInUser.getRole().name())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        try {
+            List<Application> applications = applicationService.getApplicationsForJob(jobId, loggedInUser);
+            return ResponseEntity.ok(applications);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Recruiter - Update Application Status
     @PutMapping("/{applicationId}/status")
     public ResponseEntity<String> updateApplicationStatus(
             @PathVariable Long applicationId,
@@ -78,38 +101,15 @@ public class ApplicationController {
         }
 
         try {
-            // Extra spaces aur case sensitivity handle kar rahe hain
-            String statusStr = newStatus.trim().toUpperCase();
-            Application.ApplicationStatus status = Application.ApplicationStatus.valueOf(statusStr);
+            String cleanStatus = newStatus.trim().replace("\"", "").toUpperCase();
+            Application.ApplicationStatus status = Application.ApplicationStatus.valueOf(cleanStatus);
 
-            Application updatedApplication = applicationService.updateApplicationStatus(applicationId, status, loggedInUser);
+            Application updated = applicationService.updateApplicationStatus(applicationId, status, loggedInUser);
             return ResponseEntity.ok("Application status updated to: " + status);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid status. Allowed: PENDING, REVIEWING, SHORTLISTED, REJECTED, ACCEPTED");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    //Recruiter - He can see all the applications of his job
-    @GetMapping("/job/{jobId}")
-    public ResponseEntity<List<Application>> getApplicationsForJob(@PathVariable Long jobId, HttpSession session) {
-        User loggedInUser = (User) session.getAttribute("user");
-
-        if (loggedInUser == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        if(!"RECRUITER".equals(loggedInUser.getRole().name()))
-        {
-            return ResponseEntity.status(403).build();
-        }
-
-        try {
-            List<Application> applications = applicationService.getApplicationsForJob(jobId, loggedInUser);
-            return ResponseEntity.ok(applications);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
         }
     }
 }

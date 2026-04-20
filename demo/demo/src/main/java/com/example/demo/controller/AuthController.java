@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,5 +47,24 @@ public class AuthController {
         session.setAttribute("role", user.getRole().name());
 
         return ResponseEntity.ok("Login successful! Welcome " + user.getUsername());
+    }
+
+    //Current logged-in user details
+    @GetMapping("/api/auth/me")
+    public ResponseEntity<User> getCurrentUser(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+
+        if(user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        return ResponseEntity.ok(user);
+    }
+
+    //Logout
+    @PostMapping("/api/auth/logout")
+    public ResponseEntity<String> logout(HttpSession session) {
+        session.invalidate(); //That Destroy session
+        return ResponseEntity.ok("logged out successfully");
     }
 }
