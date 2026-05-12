@@ -10,38 +10,36 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/auth")
 public class AuthController {
-
     @Autowired
     private UserService userService;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    @PostMapping("/api/auth/signup")
+    // Signup
+    @PostMapping("/signup")
     public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest request) {
         userService.signup(request);
         return ResponseEntity.ok("User registered successfully!");
     }
 
-    @PostMapping("/api/auth/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request, HttpSession session) {
+    //login
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody LoginRequest request, HttpSession  session) {
         User user = userService.findByEmail(request.getUsernameOrEmail());
-        if (user == null) {
+        if(user == null) {
             user = userService.findByUsername(request.getUsernameOrEmail());
         }
 
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if(user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
 
-        // Session mein user save kar do
         session.setAttribute("user", user);
         session.setAttribute("userId", user.getId());
         session.setAttribute("role", user.getRole().name());
@@ -49,22 +47,22 @@ public class AuthController {
         return ResponseEntity.ok("Login successful! Welcome " + user.getUsername());
     }
 
-    //Current logged-in user details
-    @GetMapping("/api/auth/me")
+    // Current Logged-in User Details
+    @GetMapping("/me")
     public ResponseEntity<User> getCurrentUser(HttpSession session) {
         User user = (User) session.getAttribute("user");
 
-        if(user == null) {
-            return ResponseEntity.status(401).build();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         return ResponseEntity.ok(user);
     }
 
-    //Logout
-    @PostMapping("/api/auth/logout")
+    // Logout
+    @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
-        session.invalidate(); //That Destroy session
-        return ResponseEntity.ok("logged out successfully");
+        session.invalidate();   // Session destroy kar deta hai
+        return ResponseEntity.ok("Logged out successfully");
     }
 }

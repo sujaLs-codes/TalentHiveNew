@@ -1,5 +1,7 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.Column;
@@ -30,10 +32,14 @@ public class Job {
     private String companyName;
 
     @Column(nullable = false)
+    @JsonProperty("location")
+    @JsonAlias("Location")
     private String Location;
 
     @Enumerated(EnumType.STRING) // \
     @Column(nullable = false) // \
+    @JsonProperty("employmentType")
+    @JsonAlias("employementType")
     private JobType employementType; // \
                                      // --> JPA saves enum as text/string.
     @Enumerated(EnumType.STRING) //

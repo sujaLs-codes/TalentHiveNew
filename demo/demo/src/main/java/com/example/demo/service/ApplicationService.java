@@ -19,16 +19,14 @@ public class ApplicationService {
     @Autowired
     private JobRepository jobRepository;
 
-    // For apply on jobs
+    // Job Seeker - Job pe apply kare
     public Application applyForJob(Long jobId, User applicant, String coverLetter) {
-
-        // First check that user applied for this job or not
         if (applicationRepository.existsByJobIdAndApplicantId(jobId, applicant.getId())) {
             throw new RuntimeException("You have already applied for this job");
         }
 
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job Not Found"));
+                .orElseThrow(() -> new RuntimeException("Job not found"));
 
         Application application = new Application();
         application.setJob(job);
@@ -39,12 +37,29 @@ public class ApplicationService {
         return applicationRepository.save(application);
     }
 
-    // Recruiter - Job ki saari applications dekh sake
+    // Job Seeker - Apni saari applications dekh sake
+    public List<Application> getMyApplications(User applicant) {
+        return applicationRepository.findByApplicantId(applicant.getId());
+    }
+
+    // Job Seeker - Apni application withdraw kar sake
+    public void withdrawApplication(Long applicationId, User applicant) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        if (!application.getApplicant().getId().equals(applicant.getId())) {
+            throw new RuntimeException("You are not authorized to withdraw this application");
+        }
+
+        applicationRepository.delete(application);
+    }
+
+    // Recruiter - Ek specific job ki saari applications dekh sake
     public List<Application> getApplicationsForJob(Long jobId, User recruiter) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        // Check karo ki yeh job isi recruiter ne post ki hai
+        // Ownership check - Sirf job poster hi dekh sake
         if (!job.getPostedBy().equals(recruiter.getUsername())) {
             throw new RuntimeException("You are not authorized to view applications for this job");
         }
@@ -52,20 +67,15 @@ public class ApplicationService {
         return applicationRepository.findByJobId(jobId);
     }
 
-    // Job Seeker - Apni saari applications dekh sake
-    public List<Application> getMyApplications(User applicant) {
-        return applicationRepository.findByApplicantId(applicant.getId());
-    }
-
-    // Recruiter - Application ka status update kare (Temporary - ownership check hata diya)
+    // Recruiter - Application ka status update kare
     public Application updateApplicationStatus(Long applicationId, Application.ApplicationStatus newStatus, User recruiter) {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        // Ownership check temporarily comment out kiya (testing ke liye)
-        // if (!application.getJob().getPostedBy().equals(recruiter.getUsername())) {
-        //     throw new RuntimeException("You are not authorized to update this application");
-        // }
+        // Ownership check - Sirf job poster hi status update kar sake
+        if (!application.getJob().getPostedBy().equals(recruiter.getUsername())) {
+            throw new RuntimeException("You are not authorized to update this application");
+        }
 
         application.setStatus(newStatus);
         return applicationRepository.save(application);

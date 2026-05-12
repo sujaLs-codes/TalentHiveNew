@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.CoverLetterRequest;
+import com.example.demo.dto.UpdateApplicationStatusRequest;
 import com.example.demo.entity.Application;
 import com.example.demo.entity.User;
 import com.example.demo.service.ApplicationService;
@@ -21,7 +23,7 @@ public class ApplicationController {
     @PostMapping("/apply/{jobId}")
     public ResponseEntity<String> applyForJob(
             @PathVariable Long jobId,
-            @RequestBody String coverLetter,
+            @RequestBody CoverLetterRequest request,
             HttpSession session) {
 
         User loggedInUser = (User) session.getAttribute("user");
@@ -35,6 +37,7 @@ public class ApplicationController {
         }
 
         try {
+            String coverLetter = request == null ? null : request.getCoverLetter();
             Application application = applicationService.applyForJob(jobId, loggedInUser, coverLetter);
             return ResponseEntity.ok("Application submitted successfully for job ID: " + jobId);
         } catch (RuntimeException e) {
@@ -57,6 +60,30 @@ public class ApplicationController {
 
         List<Application> applications = applicationService.getMyApplications(loggedInUser);
         return ResponseEntity.ok(applications);
+    }
+
+    // Job Seeker - Apni application withdraw kare
+    @DeleteMapping("/{applicationId}")
+    public ResponseEntity<String> withdrawApplication(
+            @PathVariable Long applicationId,
+            HttpSession session) {
+
+        User loggedInUser = (User) session.getAttribute("user");
+
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401).body("Please login first");
+        }
+
+        if (!"JOB_SEEKER".equals(loggedInUser.getRole().name())) {
+            return ResponseEntity.status(403).body("Only Job Seekers can withdraw applications");
+        }
+
+        try {
+            applicationService.withdrawApplication(applicationId, loggedInUser);
+            return ResponseEntity.ok("Application withdrawn successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // Recruiter - Job ki saari applications dekh sake
@@ -83,11 +110,11 @@ public class ApplicationController {
         }
     }
 
-    // Recruiter - Update Application Status
+    // Recruiter - Application ka status update kare
     @PutMapping("/{applicationId}/status")
     public ResponseEntity<String> updateApplicationStatus(
             @PathVariable Long applicationId,
-            @RequestBody String newStatus,
+            @RequestBody UpdateApplicationStatusRequest request,
             HttpSession session) {
 
         User loggedInUser = (User) session.getAttribute("user");
@@ -101,7 +128,12 @@ public class ApplicationController {
         }
 
         try {
-            String cleanStatus = newStatus.trim().replace("\"", "").toUpperCase();
+            String newStatus = request == null ? null : request.getStatus();
+            if (newStatus == null || newStatus.isBlank()) {
+                return ResponseEntity.badRequest().body("Status is required");
+            }
+
+            String cleanStatus = newStatus.trim().toUpperCase();
             Application.ApplicationStatus status = Application.ApplicationStatus.valueOf(cleanStatus);
 
             Application updated = applicationService.updateApplicationStatus(applicationId, status, loggedInUser);

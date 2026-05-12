@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.entity.Job;
+import com.example.demo.entity.User;
 import com.example.demo.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,10 @@ public class JobService {
     // Sab jobs list karne ke liye
     public List<Job> getAllJobs() {
         return jobRepository.findAll();
+    }
+
+    public List<Job> getJobsPostedBy(String username) {
+        return jobRepository.findByPostedBy(username);
     }
 
     // Ek specific job dikhane ke liye (ID se)
@@ -51,7 +56,37 @@ public class JobService {
             jobRepository.save(j1);
             jobRepository.save(j2);
 
-            System.out.println("✅ Dummy jobs added successfully!");
+            System.out.println("jobs added successfully!");
         }
+    }
+
+    // Search & Filter Jobs
+    public List<Job> searchJobs(String keyword, String location, String employmentType, String workMode) {
+        if ((keyword == null || keyword.trim().isEmpty()) &&
+                (location == null || location.trim().isEmpty()) &&
+                (employmentType == null || employmentType.trim().isEmpty()) &&
+                (workMode == null || workMode.trim().isEmpty())) {
+
+            return jobRepository.findAll();
+        }
+
+        // Simple keyword search
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return jobRepository.findByTitleContainingIgnoreCaseOrCompanyNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                    keyword.trim(), keyword.trim(), keyword.trim());
+        }
+
+        // Advanced filters (baad mein aur improve kar sakte hain)
+        return jobRepository.findAll();
+    }
+
+    //Recruiter - For job posting
+    public Job postJob(Job job, User recruiter) {
+        //Only recruiter can post job
+        if(!"RECRUITER".equals(recruiter.getRole().name())) {
+            throw new RuntimeException("Only recruiter can post jobs");
+        }
+        job.setPostedBy(recruiter.getUsername());
+        return jobRepository.save(job);
     }
 }
