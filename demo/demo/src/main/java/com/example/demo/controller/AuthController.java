@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.MessageResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.SignupRequest;
+import com.example.demo.dto.UserResponse;
 import com.example.demo.entity.User;
 import com.example.demo.service.UserService;
 import jakarta.servlet.http.HttpSession;
@@ -23,46 +25,46 @@ public class AuthController {
 
     // Signup
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest request) {
+    public ResponseEntity<MessageResponse> signup(@Valid @RequestBody SignupRequest request) {
         userService.signup(request);
-        return ResponseEntity.ok("User registered successfully!");
+        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 
     //login
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request, HttpSession  session) {
+    public ResponseEntity<MessageResponse> login(@Valid @RequestBody LoginRequest request, HttpSession  session) {
         User user = userService.findByEmail(request.getUsernameOrEmail());
         if(user == null) {
             user = userService.findByUsername(request.getUsernameOrEmail());
         }
 
         if(user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("Invalid credentials"));
         }
 
         session.setAttribute("user", user);
         session.setAttribute("userId", user.getId());
         session.setAttribute("role", user.getRole().name());
 
-        return ResponseEntity.ok("Login successful! Welcome " + user.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Login successful! Welcome " + user.getUsername()));
     }
 
     // Current Logged-in User Details
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser(HttpSession session) {
+    public ResponseEntity<UserResponse> getCurrentUser(HttpSession session) {
         User user = (User) session.getAttribute("user");
 
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(UserResponse.from(user));
     }
 
     // Logout
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpSession session) {
+    public ResponseEntity<MessageResponse> logout(HttpSession session) {
         session.invalidate();   // Session destroy kar deta hai
-        return ResponseEntity.ok("Logged out successfully");
+        return ResponseEntity.ok(new MessageResponse("Logged out successfully"));
     }
 }

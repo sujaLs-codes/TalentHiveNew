@@ -1,8 +1,13 @@
 package com.example.demo.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class LoginRequest {
 
+    @NotBlank
     private String usernameOrEmail;
+
+    @NotBlank
     private String password;
 
     // Manual Getters

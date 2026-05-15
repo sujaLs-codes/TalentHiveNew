@@ -1,8 +1,5 @@
 package com.example.demo.dto;
 
-import lombok.Data;
-
-@Data
 public class LoginResponse {
     private String token;
     private String username;
@@ -13,5 +10,17 @@ public class LoginResponse {
         this.token = token;
         this.username = username;
         this.role = role;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getRole() {
+        return role;
     }
 }

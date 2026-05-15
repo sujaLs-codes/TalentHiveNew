@@ -2,17 +2,23 @@ package com.example.demo.service;
 
 import com.example.demo.entity.Job;
 import com.example.demo.entity.User;
+import com.example.demo.repository.ApplicationRepository;
 import com.example.demo.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 public class JobService {
 
     @Autowired
     private JobRepository jobRepository;
+
+    @Autowired
+    private ApplicationRepository applicationRepository;
 
     // Sab jobs list karne ke liye
     public List<Job> getAllJobs() {
@@ -62,22 +68,12 @@ public class JobService {
 
     // Search & Filter Jobs
     public List<Job> searchJobs(String keyword, String location, String employmentType, String workMode) {
-        if ((keyword == null || keyword.trim().isEmpty()) &&
-                (location == null || location.trim().isEmpty()) &&
-                (employmentType == null || employmentType.trim().isEmpty()) &&
-                (workMode == null || workMode.trim().isEmpty())) {
-
-            return jobRepository.findAll();
-        }
-
-        // Simple keyword search
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            return jobRepository.findByTitleContainingIgnoreCaseOrCompanyNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                    keyword.trim(), keyword.trim(), keyword.trim());
-        }
-
-        // Advanced filters (baad mein aur improve kar sakte hain)
-        return jobRepository.findAll();
+        return jobRepository.findAll().stream()
+                .filter(job -> matchesKeyword(job, keyword))
+                .filter(job -> matchesLocation(job, location))
+                .filter(job -> matchesEmploymentType(job, employmentType))
+                .filter(job -> matchesWorkMode(job, workMode))
+                .collect(Collectors.toList());
     }
 
     //Recruiter - For job posting
@@ -88,5 +84,94 @@ public class JobService {
         }
         job.setPostedBy(recruiter.getUsername());
         return jobRepository.save(job);
+    }
+
+    public Job updateJob(Long jobId, Job updatedJob, User recruiter) {
+        if (!"RECRUITER".equals(recruiter.getRole().name())) {
+            throw new RuntimeException("Only recruiter can update jobs");
+        }
+
+        Job existingJob = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        if (!existingJob.getPostedBy().equals(recruiter.getUsername())) {
+            throw new RuntimeException("You are not authorized to update this job");
+        }
+
+        existingJob.setTitle(updatedJob.getTitle());
+        existingJob.setDescription(updatedJob.getDescription());
+        existingJob.setCompanyName(updatedJob.getCompanyName());
+        existingJob.setLocation(updatedJob.getLocation());
+        existingJob.setEmploymentType(updatedJob.getEmploymentType());
+        existingJob.setWorkMode(updatedJob.getWorkMode());
+        existingJob.setSalaryRange(updatedJob.getSalaryRange());
+        existingJob.setSkillsRequired(updatedJob.getSkillsRequired());
+
+        return jobRepository.save(existingJob);
+    }
+
+    public void deleteJob(Long jobId, User recruiter) {
+        if (!"RECRUITER".equals(recruiter.getRole().name())) {
+            throw new RuntimeException("Only recruiter can delete jobs");
+        }
+
+        Job existingJob = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        if (!existingJob.getPostedBy().equals(recruiter.getUsername())) {
+            throw new RuntimeException("You are not authorized to delete this job");
+        }
+
+        applicationRepository.deleteByJobId(jobId);
+        jobRepository.delete(existingJob);
+    }
+
+    private boolean matchesKeyword(Job job, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return true;
+        }
+
+        String normalizedKeyword = keyword.trim().toLowerCase(Locale.ROOT);
+        return containsIgnoreCase(job.getTitle(), normalizedKeyword)
+                || containsIgnoreCase(job.getCompanyName(), normalizedKeyword)
+                || containsIgnoreCase(job.getDescription(), normalizedKeyword)
+                || containsIgnoreCase(job.getSkillsRequired(), normalizedKeyword);
+    }
+
+    private boolean matchesLocation(Job job, String location) {
+        if (location == null || location.trim().isEmpty()) {
+            return true;
+        }
+        return containsIgnoreCase(job.getLocation(), location.trim().toLowerCase(Locale.ROOT));
+    }
+
+    private boolean matchesEmploymentType(Job job, String employmentType) {
+        if (employmentType == null || employmentType.trim().isEmpty()) {
+            return true;
+        }
+
+        try {
+            Job.JobType requestedType = Job.JobType.valueOf(employmentType.trim().toUpperCase(Locale.ROOT));
+            return requestedType == job.getEmploymentType();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private boolean matchesWorkMode(Job job, String workMode) {
+        if (workMode == null || workMode.trim().isEmpty()) {
+            return true;
+        }
+
+        try {
+            Job.WorkMode requestedMode = Job.WorkMode.valueOf(workMode.trim().toUpperCase(Locale.ROOT));
+            return requestedMode == job.getWorkMode();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private boolean containsIgnoreCase(String source, String searchText) {
+        return source != null && source.toLowerCase(Locale.ROOT).contains(searchText);
     }
 }

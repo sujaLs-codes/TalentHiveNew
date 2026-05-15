@@ -1,7 +1,10 @@
 package com.example.demo.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class UpdateApplicationStatusRequest {
 
+    @NotBlank
     private String status;
 
     public String getStatus() {
