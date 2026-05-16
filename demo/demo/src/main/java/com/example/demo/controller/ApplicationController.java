@@ -13,6 +13,10 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -21,28 +25,55 @@ public class ApplicationController {
     @Autowired
     private ApplicationService applicationService;
 
-    // Apply for Job
+    // Apply for Job with Resume Upload
     @PostMapping("/apply/{jobId}")
     public ResponseEntity<MessageResponse> applyForJob(
             @PathVariable Long jobId,
-            @Valid @RequestBody CoverLetterRequest request,
+            @RequestParam(value = "coverLetter", required = false) String coverLetter,
+            @RequestParam("resume") MultipartFile resumeFile,
             HttpSession session) {
 
         User loggedInUser = (User) session.getAttribute("user");
 
         if (loggedInUser == null) {
-            return ResponseEntity.status(401).body(new MessageResponse("Please login first"));
+            return ResponseEntity.status(401)
+                    .body(new MessageResponse("Please login first"));
         }
 
         if (!"JOB_SEEKER".equals(loggedInUser.getRole().name())) {
-            return ResponseEntity.status(403).body(new MessageResponse("Only Job Seekers can apply for jobs"));
+            return ResponseEntity.status(403)
+                    .body(new MessageResponse("Only Job Seekers can apply for jobs"));
         }
 
         try {
-            applicationService.applyForJob(jobId, loggedInUser, request.getCoverLetter());
-            return ResponseEntity.ok(new MessageResponse("Application submitted successfully for job ID: " + jobId));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+            // File validation
+            if (resumeFile.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Resume file is required"));
+            }
+
+            // Save resume file
+            String fileName = System.currentTimeMillis() + "_" + resumeFile.getOriginalFilename();
+            String uploadDir = "uploads/resumes/";
+            File uploadPath = new File(uploadDir);
+
+            if (!uploadPath.exists()) {
+                uploadPath.mkdirs();
+            }
+
+            Path filePath = Paths.get(uploadDir + fileName);
+            resumeFile.transferTo(filePath);
+
+            String resumeUrl = "/uploads/resumes/" + fileName;
+
+            // Service call with resume
+            applicationService.applyForJob(jobId, loggedInUser, coverLetter, resumeUrl);
+
+            return ResponseEntity.ok(new MessageResponse("Application submitted successfully with resume for Job ID: " + jobId));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error uploading resume: " + e.getMessage()));
         }
     }
 

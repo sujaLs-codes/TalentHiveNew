@@ -41,4 +41,12 @@ public class UserService {
     public User findByUsername(String username) {
         return userRepository.findByUsername(username).orElse(null);
     }
+
+    public User updateProfilePicture(Long userId, String profilePictureUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setProfilePictureUrl(profilePictureUrl);
+        return userRepository.save(user);
+    }
 }

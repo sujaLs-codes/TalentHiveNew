@@ -22,7 +22,7 @@ public class ApplicationService {
     private JobRepository jobRepository;
 
     // Job Seeker - Job pe apply kare
-    public Application applyForJob(Long jobId, User applicant, String coverLetter) {
+    public Application applyForJob(Long jobId, User applicant, String coverLetter, String resumeUrl) {
         if (applicationRepository.existsByJobIdAndApplicantId(jobId, applicant.getId())) {
             throw new RuntimeException("You have already applied for this job");
         }
@@ -34,6 +34,7 @@ public class ApplicationService {
         application.setJob(job);
         application.setApplicant(applicant);
         application.setCoverLetter(coverLetter);
+        application.setResumeUrl(resumeUrl); //Resume Url are saving
         application.setStatus(Application.ApplicationStatus.PENDING);
 
         return applicationRepository.save(application);

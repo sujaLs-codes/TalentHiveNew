@@ -24,7 +24,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/jobs", "/api/jobs/**").permitAll()
-                        .requestMatchers("/api/applications/**").permitAll()   // ← Apply for Job ke liye
+                        .requestMatchers("/api/applications/**").permitAll()   // ← Yeh line add kar do
+                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
