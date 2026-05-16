@@ -6,9 +6,11 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.ApplicationRepository;
 import com.example.demo.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class ApplicationService {
@@ -38,8 +40,9 @@ public class ApplicationService {
     }
 
     // Job Seeker - Apni saari applications dekh sake
-    public List<Application> getMyApplications(User applicant) {
-        return applicationRepository.findByApplicantId(applicant.getId());
+    public Page<Application> getMyApplications(User applicant, int page, int size) {
+        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size), Sort.by(Sort.Direction.DESC, "appliedAt"));
+        return applicationRepository.findByApplicantId(applicant.getId(), pageable);
     }
 
     // Job Seeker - Apni application withdraw kar sake
@@ -55,7 +58,7 @@ public class ApplicationService {
     }
 
     // Recruiter - Ek specific job ki saari applications dekh sake
-    public List<Application> getApplicationsForJob(Long jobId, User recruiter) {
+    public Page<Application> getApplicationsForJob(Long jobId, User recruiter, int page, int size) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
@@ -64,7 +67,8 @@ public class ApplicationService {
             throw new RuntimeException("You are not authorized to view applications for this job");
         }
 
-        return applicationRepository.findByJobId(jobId);
+        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size), Sort.by(Sort.Direction.DESC, "appliedAt"));
+        return applicationRepository.findByJobId(jobId, pageable);
     }
 
     // Recruiter - Application ka status update kare
@@ -79,5 +83,16 @@ public class ApplicationService {
 
         application.setStatus(newStatus);
         return applicationRepository.save(application);
+    }
+
+    private int normalizePage(int page) {
+        return Math.max(page, 0);
+    }
+
+    private int normalizeSize(int size) {
+        if (size <= 0) {
+            return 10;
+        }
+        return Math.min(size, 100);
     }
 }

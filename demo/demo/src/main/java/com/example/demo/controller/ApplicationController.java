@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.ApplicationResponse;
 import com.example.demo.dto.CoverLetterRequest;
 import com.example.demo.dto.MessageResponse;
+import com.example.demo.dto.PagedResponse;
 import com.example.demo.dto.UpdateApplicationStatusRequest;
 import com.example.demo.entity.Application;
 import com.example.demo.entity.User;
@@ -12,9 +13,6 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/applications")
@@ -50,7 +48,10 @@ public class ApplicationController {
 
     // My Applications (Job Seeker)
     @GetMapping("/my")
-    public ResponseEntity<List<ApplicationResponse>> getMyApplications(HttpSession session) {
+    public ResponseEntity<PagedResponse<ApplicationResponse>> getMyApplications(
+            HttpSession session,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         User loggedInUser = (User) session.getAttribute("user");
 
         if (loggedInUser == null) {
@@ -61,10 +62,8 @@ public class ApplicationController {
             return ResponseEntity.status(403).build();
         }
 
-        List<Application> applications = applicationService.getMyApplications(loggedInUser);
-        return ResponseEntity.ok(applications.stream()
-                .map(ApplicationResponse::from)
-                .collect(Collectors.toList()));
+        var applications = applicationService.getMyApplications(loggedInUser, page, size).map(ApplicationResponse::from);
+        return ResponseEntity.ok(PagedResponse.from(applications));
     }
 
     // Job Seeker - Apni application withdraw kare
@@ -93,9 +92,11 @@ public class ApplicationController {
 
     // Recruiter - Job ki saari applications dekh sake
     @GetMapping("/job/{jobId}")
-    public ResponseEntity<List<ApplicationResponse>> getApplicationsForJob(
+    public ResponseEntity<?> getApplicationsForJob(
             @PathVariable Long jobId,
-            HttpSession session) {
+            HttpSession session,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
         User loggedInUser = (User) session.getAttribute("user");
 
@@ -108,12 +109,10 @@ public class ApplicationController {
         }
 
         try {
-            List<Application> applications = applicationService.getApplicationsForJob(jobId, loggedInUser);
-            return ResponseEntity.ok(applications.stream()
-                    .map(ApplicationResponse::from)
-                    .collect(Collectors.toList()));
+            var applications = applicationService.getApplicationsForJob(jobId, loggedInUser, page, size).map(ApplicationResponse::from);
+            return ResponseEntity.ok(PagedResponse.from(applications));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
 

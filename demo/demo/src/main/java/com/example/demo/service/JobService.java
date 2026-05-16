@@ -5,6 +5,11 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.ApplicationRepository;
 import com.example.demo.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,12 +26,14 @@ public class JobService {
     private ApplicationRepository applicationRepository;
 
     // Sab jobs list karne ke liye
-    public List<Job> getAllJobs() {
-        return jobRepository.findAll();
+    public Page<Job> getAllJobs(int page, int size) {
+        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size), Sort.by(Sort.Direction.DESC, "postedAt"));
+        return jobRepository.findAll(pageable);
     }
 
-    public List<Job> getJobsPostedBy(String username) {
-        return jobRepository.findByPostedBy(username);
+    public Page<Job> getJobsPostedBy(String username, int page, int size) {
+        Pageable pageable = PageRequest.of(normalizePage(page), normalizeSize(size), Sort.by(Sort.Direction.DESC, "postedAt"));
+        return jobRepository.findByPostedBy(username, pageable);
     }
 
     // Ek specific job dikhane ke liye (ID se)
@@ -67,13 +74,21 @@ public class JobService {
     }
 
     // Search & Filter Jobs
-    public List<Job> searchJobs(String keyword, String location, String employmentType, String workMode) {
-        return jobRepository.findAll().stream()
+    public Page<Job> searchJobs(String keyword, String location, String employmentType, String workMode, int page, int size) {
+        int normalizedPage = normalizePage(page);
+        int normalizedSize = normalizeSize(size);
+        List<Job> filteredJobs = jobRepository.findAll(Sort.by(Sort.Direction.DESC, "postedAt")).stream()
                 .filter(job -> matchesKeyword(job, keyword))
                 .filter(job -> matchesLocation(job, location))
                 .filter(job -> matchesEmploymentType(job, employmentType))
                 .filter(job -> matchesWorkMode(job, workMode))
                 .collect(Collectors.toList());
+
+        int start = Math.min(normalizedPage * normalizedSize, filteredJobs.size());
+        int end = Math.min(start + normalizedSize, filteredJobs.size());
+        List<Job> pageContent = filteredJobs.subList(start, end);
+
+        return new PageImpl<>(pageContent, PageRequest.of(normalizedPage, normalizedSize), filteredJobs.size());
     }
 
     //Recruiter - For job posting
@@ -173,5 +188,16 @@ public class JobService {
 
     private boolean containsIgnoreCase(String source, String searchText) {
         return source != null && source.toLowerCase(Locale.ROOT).contains(searchText);
+    }
+
+    private int normalizePage(int page) {
+        return Math.max(page, 0);
+    }
+
+    private int normalizeSize(int size) {
+        if (size <= 0) {
+            return 10;
+        }
+        return Math.min(size, 100);
     }
 }

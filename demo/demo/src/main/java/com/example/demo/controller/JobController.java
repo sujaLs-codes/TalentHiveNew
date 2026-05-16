@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.JobRequest;
 import com.example.demo.dto.JobResponse;
 import com.example.demo.dto.MessageResponse;
+import com.example.demo.dto.PagedResponse;
 import com.example.demo.entity.Job;
 import com.example.demo.entity.User;
 import com.example.demo.service.JobService;
@@ -12,9 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
+
+
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -25,13 +26,18 @@ public class JobController {
 
     // Sab jobs dekhne ke liye (Public)
     @GetMapping
-    public ResponseEntity<List<JobResponse>> getAllJobs() {
-        List<Job> jobs = jobService.getAllJobs();
-        return ResponseEntity.ok(toJobResponses(jobs));
+    public ResponseEntity<PagedResponse<JobResponse>> getAllJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var jobs = jobService.getAllJobs(page, size).map(JobResponse::from);
+        return ResponseEntity.ok(PagedResponse.from(jobs));
     }
 
     @GetMapping("/my")
-    public ResponseEntity<?> getMyPostedJobs(HttpSession session) {
+    public ResponseEntity<?> getMyPostedJobs(
+            HttpSession session,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         User loggedInUser = (User) session.getAttribute("user");
 
         if (loggedInUser == null) {
@@ -42,8 +48,8 @@ public class JobController {
             return ResponseEntity.status(403).body(new MessageResponse("Only recruiters can view their posted jobs."));
         }
 
-        List<Job> jobs = jobService.getJobsPostedBy(loggedInUser.getUsername());
-        return ResponseEntity.ok(toJobResponses(jobs));
+        var jobs = jobService.getJobsPostedBy(loggedInUser.getUsername(), page, size).map(JobResponse::from);
+        return ResponseEntity.ok(PagedResponse.from(jobs));
     }
 
     // Ek job ki details
@@ -133,18 +139,16 @@ public class JobController {
 
     // Search & Filter Jobs
     @GetMapping("/search")
-    public ResponseEntity<List<JobResponse>> searchJobs(
+    public ResponseEntity<PagedResponse<JobResponse>> searchJobs(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String employmentType,
-            @RequestParam(required = false) String workMode) {
+            @RequestParam(required = false) String workMode,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        List<Job> jobs = jobService.searchJobs(keyword, location, employmentType, workMode);
-        return ResponseEntity.ok(toJobResponses(jobs));
-    }
-
-    private List<JobResponse> toJobResponses(List<Job> jobs) {
-        return jobs.stream().map(JobResponse::from).collect(Collectors.toList());
+        var jobs = jobService.searchJobs(keyword, location, employmentType, workMode, page, size).map(JobResponse::from);
+        return ResponseEntity.ok(PagedResponse.from(jobs));
     }
 
     private Job toJobEntity(JobRequest request) {
