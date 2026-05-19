@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.MessageResponse;
-import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.SignupRequest;
-import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.*;
 import com.example.demo.entity.User;
 import com.example.demo.service.UserService;
 import jakarta.servlet.http.HttpSession;
@@ -65,6 +62,27 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    //Update Recruiter Profile
+    @PutMapping("/me")
+    public ResponseEntity<MessageResponse> updateProfile(@RequestBody RecruiterProfileRequest request, HttpSession session) {
+        User loggedInUser = (User) session.getAttribute("user");
+
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401).body(new MessageResponse("Please login first"));
+        }
+
+        if (!"RECRUITER".equals(loggedInUser.getRole().name())) {
+            return ResponseEntity.status(403).body(new MessageResponse("Only Recruiters can update recruiter profile"));
+        }
+
+        try {
+            userService.updateRecruiterProfile(loggedInUser, request);
+            return ResponseEntity.ok(new MessageResponse("Profile updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error Updating profile: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/profile-picture")

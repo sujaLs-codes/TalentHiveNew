@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.RecruiterProfileRequest;
 import com.example.demo.dto.SignupRequest;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
@@ -48,5 +49,26 @@ public class UserService {
 
         user.setProfilePictureUrl(profilePictureUrl);
         return userRepository.save(user);
+    }
+
+    // Recruiter Profile Update
+    public User updateRecruiterProfile(User recruiter, RecruiterProfileRequest request) {
+        if (request.getFullName() != null) recruiter.setFullName(request.getFullName());
+        if (request.getJobTitle() != null) recruiter.setJobTitle(request.getJobTitle()); // agar field add kiya ho
+        if (request.getBio() != null) recruiter.setBio(request.getBio());
+        if (request.getPhoneNumber() != null) recruiter.setPhoneNumber(request.getPhoneNumber());
+
+        // Company fields (agar alag column hai toh)
+        if (request.getCompanyName() != null) recruiter.setCompanyName(request.getCompanyName());
+        if (request.getCompanyLogoUrl() != null) recruiter.setCompanyLogoUrl(request.getCompanyLogoUrl());
+        if (request.getCompanyWebsite() != null) recruiter.setCompanyWebsite(request.getCompanyWebsite());
+        if (request.getCompanyLinkedInUrl() != null) recruiter.setCompanyLinkedInUrl(request.getCompanyLinkedInUrl());
+        if (request.getCompanySize() != null) recruiter.setCompanySize(request.getCompanySize());
+        if (request.getStreet() != null) recruiter.setStreet(request.getStreet());
+        if (request.getCity() != null) recruiter.setCity(request.getCity());
+        if (request.getState() != null) recruiter.setState(request.getState());
+        if (request.getCountry() != null) recruiter.setCountry(request.getCountry());
+
+        return userRepository.save(recruiter);
     }
 }
