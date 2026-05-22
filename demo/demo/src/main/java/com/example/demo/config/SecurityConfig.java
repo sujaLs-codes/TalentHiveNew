@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/jobs", "/api/jobs/**").permitAll()
                         .requestMatchers("/api/applications/**").permitAll()   // ← Yeh line add kar do
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/profile/**").permitAll()
                         .anyRequest().authenticated()
                 );
 

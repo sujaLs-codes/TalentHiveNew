@@ -77,7 +77,7 @@ public class ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        // Ownership check - Sirf job poster hi status update kar sake
+        // Ownershhip check - Sirf job poster hi status update kar sake
         if (!application.getJob().getPostedBy().equals(recruiter.getUsername())) {
             throw new RuntimeException("You are not authorized to update this application");
         }
