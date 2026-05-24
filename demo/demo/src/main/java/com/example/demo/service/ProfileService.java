@@ -41,6 +41,9 @@ public class ProfileService {
         if (request.getCountry() != null) {
             loggedInUser.setCountry(request.getCountry());
         }
+        if (request.getLinkedinUrl() != null) {
+            loggedInUser.setLinkedInUrl(request.getLinkedinUrl());
+        }
 
         //Preferences
         if (request.getDesiredJobTitle() != null) {
