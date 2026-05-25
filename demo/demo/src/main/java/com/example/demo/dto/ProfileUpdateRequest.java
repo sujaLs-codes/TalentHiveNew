@@ -10,8 +10,7 @@ public class ProfileUpdateRequest {
     private String portfolioUrl;
     private String city;
     private String country;
-
-    private String linkedinUrl;
+    private String linkedinUrl;               // ← Yeh add kiya
 
     // Job Seeker Preferences
     private String desiredJobTitle;
@@ -43,7 +42,7 @@ public class ProfileUpdateRequest {
     public String getCountry() { return country; }
     public void setCountry(String country) { this.country = country; }
 
-    public String getLinkedinUrl() { return linkedinUrl; }
+    public String getLinkedinUrl() { return linkedinUrl; }           // ← Yeh add kiya
     public void setLinkedinUrl(String linkedinUrl) { this.linkedinUrl = linkedinUrl; }
 
     public String getDesiredJobTitle() { return desiredJobTitle; }

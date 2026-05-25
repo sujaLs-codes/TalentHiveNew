@@ -34,6 +34,7 @@ public class User {
     private String phoneNumber;
     private String profilePictureUrl;
     private String portfolioUrl;
+    private String linkedinUrl;
 
     // Company Info (Recruiter)
     private String companyName;
@@ -102,6 +103,8 @@ public class User {
 
     public String getPortfolioUrl() { return portfolioUrl; }
     public void setPortfolioUrl(String portfolioUrl) { this.portfolioUrl = portfolioUrl; }
+    public String getLinkedinUrl() { return linkedinUrl; }
+    public void setLinkedinUrl(String linkedinUrl) { this.linkedinUrl = linkedinUrl; }
 
     public String getCompanyName() { return companyName; }
     public void setCompanyName(String companyName) { this.companyName = companyName; }
