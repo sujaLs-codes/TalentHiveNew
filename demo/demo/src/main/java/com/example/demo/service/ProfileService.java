@@ -1,18 +1,8 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.ProfileUpdateRequest;
-import com.example.demo.dto.SocialLinkRequest;
-import com.example.demo.dto.WorkExperienceRequest;
-import com.example.demo.dto.EducationRequest;
-import com.example.demo.entity.Education;
-import com.example.demo.entity.EmploymentType;
-import com.example.demo.entity.SocialLink;
-import com.example.demo.entity.User;
-import com.example.demo.entity.WorkExperience;
-import com.example.demo.repository.EducationRepository;
-import com.example.demo.repository.SocialLinkRepository;
-import com.example.demo.repository.UserRepository;
-import com.example.demo.repository.WorkExperienceRepository;
+import com.example.demo.dto.*;
+import com.example.demo.entity.*;
+import com.example.demo.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -171,5 +161,69 @@ public class ProfileService {
         }
 
         educationRepository.delete(education);
+    }
+
+
+    @Autowired
+    private SkillRepository skillRepository;
+
+    // Add Skill
+    public Skill addSkill(User user, SkillRequest request) {
+        Skill skill = new Skill();
+        skill.setUser(user);
+        skill.setSkillName(request.getSkillName());
+        skill.setProficiencyLevel(ProficiencyLevel.valueOf(request.getProficiencyLevel()));
+
+        return skillRepository.save(skill);
+    }
+
+    // Get All Skills
+    public List<Skill> getUserSkills(User user) {
+        return skillRepository.findByUserId(user.getId());
+    }
+
+    // Delete Skill
+    public void deleteSkill(Long skillId, User user) {
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new RuntimeException("Skill not found"));
+
+        if (!skill.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only delete your own skill");
+        }
+
+        skillRepository.delete(skill);
+    }
+
+    @Autowired
+    private CertificationRepository certificationRepository;
+
+    //Add Certificate
+    public Certification addCertification(User user, CertificationRequest request) {
+        Certification cert = new Certification();
+        cert.setUser(user);
+        cert.setCertificationName(request.getCertificationName());
+        cert.setIssuingOrganization(request.getIssuingOrganization());
+        cert.setIssueDate(request.getIssueDate());
+        cert.setExpiryDate(request.getExpiryDate());
+        cert.setCredentialUrl(request.getCredentialUrl());
+
+        return certificationRepository.save(cert);
+    }
+
+    // Get All Certifications
+    public List<Certification> getUserCertifications(User user) {
+        return certificationRepository.findByUserId(user.getId());
+    }
+
+    // Delete Certification
+    public void deleteCertification(Long certId, User user) {
+        Certification cert = certificationRepository.findById(certId)
+                .orElseThrow(() -> new RuntimeException("Certification not found"));
+
+        if (!cert.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("You can only delete your own certification");
+        }
+
+        certificationRepository.delete(cert);
     }
 }
