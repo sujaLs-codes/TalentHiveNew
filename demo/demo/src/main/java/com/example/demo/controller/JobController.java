@@ -52,7 +52,7 @@ public class JobController {
         return ResponseEntity.ok(PagedResponse.from(jobs));
     }
 
-    // Ek job ki details
+    // Details of each job
     @GetMapping("/{id}")
     public ResponseEntity<JobResponse> getJobById(@PathVariable Long id) {
         Job job = jobService.getJobById(id);
@@ -62,7 +62,7 @@ public class JobController {
         return ResponseEntity.ok(JobResponse.from(job));
     }
 
-    // Recruiter - Nayi job post kare
+    // Recruiter - Post new jobs
     @PostMapping
     public ResponseEntity<?> postJob(@Valid @RequestBody JobRequest request, HttpSession session) {
         User loggedInUser = (User) session.getAttribute("user");
@@ -162,5 +162,44 @@ public class JobController {
         job.setSalaryRange(request.getSalaryRange().trim());
         job.setSkillsRequired(request.getSkillsRequired().trim());
         return job;
+    }
+
+    // Public Job Details (It will execute without login)
+    @GetMapping("/{jobId}")
+    public ResponseEntity<Job> getJobDetails(@PathVariable Long jobId) {
+        Job job = jobService.getJobById(jobId);
+        if (job == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(job);
+    }
+
+    // Share Job (Login + Recruiter check)
+    @GetMapping("/{jobId}/share")
+    public ResponseEntity<String> getShareableLink(@PathVariable Long jobId, HttpSession session) {
+
+        User loggedInUser = (User) session.getAttribute("user");
+
+        if (loggedInUser == null) {
+            return ResponseEntity.status(401).body("Please login to share this job");
+        }
+
+        if (!"RECRUITER".equals(loggedInUser.getRole().name())) {
+            return ResponseEntity.status(403).body("Only recruiters can share jobs");
+        }
+
+        Job job = jobService.getJobById(jobId);
+        if (job == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Optional: Ownership check
+        if (!job.getPostedBy().equals(loggedInUser.getUsername())) {
+            return ResponseEntity.status(403).body("You can only share jobs you posted");
+        }
+
+        String shareLink = "http://localhost:8080/jobs/" + jobId;  // Bad mein real domain daal denge
+
+        return ResponseEntity.ok(shareLink);
     }
 }
